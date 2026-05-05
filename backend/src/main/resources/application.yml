@@ -1,0 +1,31 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: resume-screening-backend
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/resume_screening?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: never
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}
+  screening:
+    thread-pool-size: ${SCREENING_THREAD_POOL_SIZE:8}
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    enabled: ${OPENAI_ENABLED:false}
+
+logging:
+  level:
+    com.resumescreening: INFO
