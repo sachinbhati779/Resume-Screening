@@ -154,6 +154,29 @@ export type InterviewResult = {
   createdAt: string;
 };
 
+export type LiveInterviewLink = {
+  id: number;
+  candidateId: number;
+  roleId: number;
+  roomName: string;
+  hostToken: string;
+  candidateToken: string;
+  hostLink: string;
+  candidateLink: string;
+  status: string;
+  createdAt: string;
+};
+
+export type LiveInterviewAccess = {
+  id: number;
+  roomName: string;
+  jitsiUrl: string;
+  candidateName: string;
+  roleName: string;
+  host: boolean;
+  status: string;
+};
+
 export type HiringDecisionPayload = {
   candidateId?: number;
   resumeId: number;
@@ -272,6 +295,23 @@ export async function submitInterviewAnswer(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ questionId, answerText }),
     },
+  );
+  return requireData(response);
+}
+
+export async function createLiveInterview(candidateId: number, roleId: number) {
+  const response = await sendBackend<LiveInterviewLink>("/api/live-interviews", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ candidateId, roleId }),
+  });
+  return requireData(response);
+}
+
+export async function getLiveInterviewAccess(token: string) {
+  const response = await sendBackend<LiveInterviewAccess>(
+    `/api/live-interviews/${token}`,
+    { method: "GET" },
   );
   return requireData(response);
 }

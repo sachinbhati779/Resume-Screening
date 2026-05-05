@@ -37,6 +37,12 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.NOT_FOUND, exception.getMessage(), "INTERVIEW_SESSION_NOT_FOUND");
     }
 
+    @ExceptionHandler(LiveInterviewNotFoundException.class)
+    public ResponseEntity<ApiResponseDTO<Void>> handleLiveInterviewNotFound(
+            LiveInterviewNotFoundException exception) {
+        return error(HttpStatus.NOT_FOUND, exception.getMessage(), "LIVE_INTERVIEW_NOT_FOUND");
+    }
+
     @ExceptionHandler({DatabaseOperationException.class, DataAccessException.class})
     public ResponseEntity<ApiResponseDTO<Void>> handleDatabaseException(RuntimeException exception) {
         log.error("Database operation failed", exception);

@@ -124,6 +124,23 @@ CREATE TABLE IF NOT EXISTS interview_reports (
     UNIQUE KEY uk_interview_report_session (session_id)
 );
 
+CREATE TABLE IF NOT EXISTS live_interviews (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    candidate_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    room_name VARCHAR(200) NOT NULL,
+    host_token VARCHAR(120) NOT NULL,
+    candidate_token VARCHAR(120) NOT NULL,
+    status VARCHAR(40) NOT NULL,
+    recording_path VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_live_interview_candidate FOREIGN KEY (candidate_id) REFERENCES resumes(id),
+    CONSTRAINT fk_live_interview_role FOREIGN KEY (role_id) REFERENCES job_roles(id),
+    UNIQUE KEY uk_live_interview_host_token (host_token),
+    UNIQUE KEY uk_live_interview_candidate_token (candidate_token)
+);
+
 CREATE TABLE IF NOT EXISTS hiring_decisions (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     candidate_id BIGINT,

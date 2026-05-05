@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/app/app-shell";
 import { InterviewConsole } from "@/components/app/interview-console";
+import { LiveInterviewPanel } from "@/components/app/live-interview-panel";
 import { MotionPanel } from "@/components/app/motion-panel";
 import { PageHeader } from "@/components/app/page-header";
 import {
@@ -31,6 +32,14 @@ export default async function AIInterviewPage() {
             roleId={role?.id}
             roleName={role?.roleName}
             candidateName={candidate?.candidateName}
+          />
+        </MotionPanel>
+        <MotionPanel delay={0.08}>
+          <LiveInterviewPanel
+            candidateId={candidate?.resumeId}
+            roleId={role?.id}
+            candidateName={candidate?.candidateName}
+            roleName={role?.roleName}
           />
         </MotionPanel>
       </div>
