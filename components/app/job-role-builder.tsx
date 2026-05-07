@@ -26,6 +26,38 @@ const weightFields = [
   ["Keywords", "keywordWeightage", 10],
 ];
 
+const genericKeywordWords = new Set([
+  "ability",
+  "able",
+  "applicant",
+  "candidate",
+  "candidates",
+  "company",
+  "excellent",
+  "good",
+  "great",
+  "hiring",
+  "ideal",
+  "join",
+  "looking",
+  "must",
+  "need",
+  "needs",
+  "passionate",
+  "preferred",
+  "required",
+  "requires",
+  "responsibilities",
+  "role",
+  "should",
+  "skilled",
+  "skills",
+  "strong",
+  "team",
+  "work",
+  "working",
+]);
+
 export function JobRoleBuilder() {
   const [skills, setSkills] = React.useState<string[]>([]);
   const [skill, setSkill] = React.useState("");
@@ -74,7 +106,7 @@ export function JobRoleBuilder() {
     const keywords = summary
       .split(/\s|,|\./)
       .map((item) => item.trim().toLowerCase())
-      .filter((item) => item.length > 3)
+      .filter((item) => item.length > 1 && !genericKeywordWords.has(item))
       .slice(0, 12);
 
     if (!roleName || !requiredEducation || nextSkills.length === 0) {

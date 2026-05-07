@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,6 +49,14 @@ public class ResumeService {
             "projects",
             "summary",
             "role"
+    );
+    private static final Map<String, List<String>> SECTION_HEADER_ALIASES = Map.of(
+            "skills", List.of("skills", "technical skills", "key skills", "core skills", "tools & platforms", "programming"),
+            "experience", List.of("experience", "work experience", "professional experience", "internship", "internships"),
+            "education", List.of("education", "academic education", "academics"),
+            "projects", List.of("projects", "academic projects", "project experience"),
+            "summary", List.of("summary", "profile", "objective", "career objective"),
+            "role", List.of("role", "applied role", "position")
     );
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}",
@@ -277,9 +286,18 @@ public class ResumeService {
     }
 
     private boolean isSectionHeader(String line, String normalizedKey) {
-        return line.equals(normalizedKey)
-                || line.startsWith(normalizedKey + " ")
-                || line.startsWith(normalizedKey + "-");
+        List<String> aliases = SECTION_HEADER_ALIASES.get(normalizedKey);
+        if (aliases != null && aliases.stream().anyMatch(alias -> isHeaderMatch(line, alias))) {
+            return true;
+        }
+        return isHeaderMatch(line, normalizedKey);
+    }
+
+    private boolean isHeaderMatch(String line, String header) {
+        return line.equals(header)
+                || line.startsWith(header + " ")
+                || line.startsWith(header + "-")
+                || line.startsWith(header + ":");
     }
 
     private boolean isAnySectionHeader(String line) {
@@ -314,11 +332,7 @@ public class ResumeService {
         if (matcher.find()) {
             return Double.parseDouble(matcher.group(1));
         }
-        String numeric = value.replaceAll("[^0-9.]", "");
-        if (numeric.isBlank()) {
-            return 0;
-        }
-        return Double.parseDouble(numeric);
+        return 0;
     }
 
     private String summarize(String content) {

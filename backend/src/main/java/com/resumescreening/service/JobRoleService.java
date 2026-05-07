@@ -5,6 +5,7 @@ import com.resumescreening.dto.JobRoleResponseDTO;
 import com.resumescreening.exception.InvalidJobRoleException;
 import com.resumescreening.model.JobRole;
 import com.resumescreening.repository.JobRoleRepository;
+import com.resumescreening.util.KeywordSanitizer;
 import com.resumescreening.util.ScreeningConstants;
 import java.util.List;
 import org.slf4j.Logger;
@@ -50,7 +51,7 @@ public class JobRoleService {
         role.setRequiredSkills(request.requiredSkills());
         role.setMinExperience(request.minExperience());
         role.setRequiredEducation(request.requiredEducation());
-        role.setKeywords(request.keywords());
+        role.setKeywords(KeywordSanitizer.sanitize(request.keywords()));
         role.setSkillWeightage(valueOrDefault(request.skillWeightage(), ScreeningConstants.DEFAULT_SKILL_WEIGHT));
         role.setExperienceWeightage(valueOrDefault(request.experienceWeightage(), ScreeningConstants.DEFAULT_EXPERIENCE_WEIGHT));
         role.setProjectWeightage(valueOrDefault(request.projectWeightage(), ScreeningConstants.DEFAULT_PROJECT_WEIGHT));

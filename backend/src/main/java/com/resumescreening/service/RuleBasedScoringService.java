@@ -11,6 +11,7 @@ import com.resumescreening.dto.ATSScoreBreakdownDTO;
 import com.resumescreening.dto.ATSScoringResultDTO;
 import com.resumescreening.model.JobRole;
 import com.resumescreening.model.Resume;
+import com.resumescreening.util.ResumeTextSimilarity;
 import com.resumescreening.util.ResumeValidator;
 import com.resumescreening.util.ScreeningStatusResolver;
 import com.resumescreening.util.StringListConverter;
@@ -36,7 +37,7 @@ public class RuleBasedScoringService implements Scorable {
         double educationScore = scoreEducation(resumeText, resume.getEducation(), role.getRequiredEducation(), role.getEducationWeightage());
         List<String> matchedKeywords = matchedKeywords(resumeText, role);
         List<String> missingKeywords = missingKeywords(resumeText, role);
-        double keywordScore = weightedRatio(matchedKeywords.size(), keywordUniverse(role).size(), role.getKeywordWeightage());
+        double keywordScore = scoreKeywordAlignment(resumeText, role, matchedKeywords.size());
         double score = Math.min(100, round(skillScore + experienceScore + projectScore + educationScore + keywordScore));
         ATSScoreBreakdownDTO breakdown = new ATSScoreBreakdownDTO(
                 skillScore,
@@ -118,6 +119,17 @@ public class RuleBasedScoringService implements Scorable {
         return round(weightage * Math.min(1, matches / (double) total));
     }
 
+    private double scoreKeywordAlignment(String resumeText, JobRole role, int exactMatches) {
+        if (role.getKeywordWeightage() <= 0) {
+            return 0;
+        }
+        List<String> keywords = keywordUniverse(role);
+        double exactRatio = keywords.isEmpty() ? 0 : Math.min(1, exactMatches / (double) keywords.size());
+        double contentSimilarity = ResumeTextSimilarity.cosineSimilarity(roleProfile(role), resumeText);
+        double blendedRatio = Math.min(1, Math.max(exactRatio, (exactRatio * 0.7) + (contentSimilarity * 0.3)));
+        return round(role.getKeywordWeightage() * blendedRatio);
+    }
+
     private List<String> matchedKeywords(String resumeText, JobRole role) {
         return keywordUniverse(role).stream()
                 .filter(keyword -> StringListConverter.containsNormalized(resumeText, keyword))
@@ -170,6 +182,14 @@ public class RuleBasedScoringService implements Scorable {
                 String.join(" ", resume.getSkills() == null ? List.of() : resume.getSkills()),
                 String.join(" ", resume.getProjects() == null ? List.of() : resume.getProjects()),
                 resume.getAppliedRole() == null ? "" : resume.getAppliedRole()).toLowerCase();
+    }
+
+    private String roleProfile(JobRole role) {
+        return String.join(" ",
+                role.getRoleName() == null ? "" : role.getRoleName(),
+                role.getRequiredEducation() == null ? "" : role.getRequiredEducation(),
+                String.join(" ", role.getRequiredSkills() == null ? List.of() : role.getRequiredSkills()),
+                String.join(" ", role.getKeywords() == null ? List.of() : role.getKeywords()));
     }
 
     private boolean hasRequiredSections(Resume resume) {
