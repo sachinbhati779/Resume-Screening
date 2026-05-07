@@ -79,6 +79,11 @@ public class JobRoleRepository {
         return jdbcTemplate.query("SELECT * FROM job_roles ORDER BY created_at DESC", rowMapper);
     }
 
+    public long count() {
+        Long count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM job_roles", Long.class);
+        return count == null ? 0 : count;
+    }
+
     public Optional<JobRole> findById(Long id) {
         List<JobRole> roles = jdbcTemplate.query("SELECT * FROM job_roles WHERE id = ?", rowMapper, id);
         return roles.stream().findFirst();

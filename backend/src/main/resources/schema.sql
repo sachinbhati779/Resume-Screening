@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS resumes (
     file_type VARCHAR(120),
     file_size BIGINT,
     file_data LONGBLOB,
+    extracted_text LONGTEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_resumes_email (email),

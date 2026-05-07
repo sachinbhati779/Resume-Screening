@@ -31,6 +31,7 @@ public class JobRoleService {
     }
 
     public List<JobRoleResponseDTO> findAll() {
+        ensureDefaultRoleExists();
         return jobRoleRepository.findAll().stream().map(this::toResponse).toList();
     }
 
@@ -77,6 +78,25 @@ public class JobRoleService {
         if (totalWeight <= 0) {
             throw new InvalidJobRoleException("At least one scoring weight must be greater than zero");
         }
+    }
+
+    private void ensureDefaultRoleExists() {
+        if (jobRoleRepository.count() > 0) {
+            return;
+        }
+        JobRole role = new JobRole();
+        role.setRoleName("General Software Engineer");
+        role.setRequiredSkills(List.of("Java", "SQL", "React", "REST"));
+        role.setMinExperience(0);
+        role.setRequiredEducation("Computer Science");
+        role.setKeywords(List.of("java", "sql", "react", "rest", "api", "project", "database"));
+        role.setSkillWeightage(ScreeningConstants.DEFAULT_SKILL_WEIGHT);
+        role.setExperienceWeightage(ScreeningConstants.DEFAULT_EXPERIENCE_WEIGHT);
+        role.setProjectWeightage(ScreeningConstants.DEFAULT_PROJECT_WEIGHT);
+        role.setEducationWeightage(ScreeningConstants.DEFAULT_EDUCATION_WEIGHT);
+        role.setKeywordWeightage(ScreeningConstants.DEFAULT_KEYWORD_WEIGHT);
+        JobRole saved = jobRoleRepository.save(role);
+        log.info("Created default job role id={} roleName={}", saved.getId(), saved.getRoleName());
     }
 
     public JobRoleResponseDTO toResponse(JobRole role) {

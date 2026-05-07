@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS resumes (
     file_type VARCHAR(120),
     file_size BIGINT,
     file_data BLOB,
+    extracted_text CLOB,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

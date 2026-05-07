@@ -1,16 +1,19 @@
 package com.resumescreening.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.stereotype.Service;
+
 import com.resumescreening.dto.ATSChecksDTO;
 import com.resumescreening.dto.ATSScoreBreakdownDTO;
 import com.resumescreening.dto.ATSScoringResultDTO;
 import com.resumescreening.model.JobRole;
 import com.resumescreening.model.Resume;
-import com.resumescreening.util.ScreeningStatusResolver;
 import com.resumescreening.util.ResumeValidator;
+import com.resumescreening.util.ScreeningStatusResolver;
 import com.resumescreening.util.StringListConverter;
-import java.util.ArrayList;
-import java.util.List;
-import org.springframework.stereotype.Service;
 
 @Service
 public class RuleBasedScoringService implements Scorable {
@@ -22,14 +25,15 @@ public class RuleBasedScoringService implements Scorable {
 
     public ATSScoringResultDTO calculateAtsResult(Resume resume, JobRole role) {
         ResumeValidator.validateForScreening(resume);
+        String resumeText = combinedResumeText(resume);
+        List<String> matchedSkills = matchedSkills(resumeText, resume.getSkills(), role.getRequiredSkills());
         double skillScore = weightedRatio(
-                StringListConverter.countMatches(role.getRequiredSkills(), resume.getSkills()),
+                matchedSkills.size(),
                 role.getRequiredSkills().size(),
                 role.getSkillWeightage());
         double experienceScore = scoreExperience(resume.getExperienceYears(), role.getMinExperience(), role.getExperienceWeightage());
-        double projectScore = scoreProjects(resume.getProjects(), role.getKeywords(), role.getProjectWeightage());
-        double educationScore = scoreEducation(resume.getEducation(), role.getRequiredEducation(), role.getEducationWeightage());
-        String resumeText = combinedResumeText(resume);
+        double projectScore = scoreProjects(resumeText, resume.getProjects(), role.getKeywords(), role.getProjectWeightage());
+        double educationScore = scoreEducation(resumeText, resume.getEducation(), role.getRequiredEducation(), role.getEducationWeightage());
         List<String> matchedKeywords = matchedKeywords(resumeText, role);
         List<String> missingKeywords = missingKeywords(resumeText, role);
         double keywordScore = weightedRatio(matchedKeywords.size(), keywordUniverse(role).size(), role.getKeywordWeightage());
@@ -41,11 +45,11 @@ public class RuleBasedScoringService implements Scorable {
                 educationScore,
                 keywordScore);
         ATSChecksDTO checks = new ATSChecksDTO(
-                true,
+                isComplete(resume),
                 resumeText.length() >= 80 && resumeText.split("\\s+").length >= 12,
                 !resumeText.matches(".*[{}<>|]{2,}.*"),
                 hasRequiredSections(resume),
-                List.of());
+                atsIssues(resume, resumeText, role));
         String status = ScreeningStatusResolver.resolve(score);
 
         return new ATSScoringResultDTO(
@@ -70,21 +74,23 @@ public class RuleBasedScoringService implements Scorable {
         return round(weightage * ratio);
     }
 
-    private double scoreProjects(List<String> projects, List<String> keywords, int weightage) {
-        if (weightage <= 0 || projects == null || projects.isEmpty()) {
+    private double scoreProjects(String resumeText, List<String> projects, List<String> keywords, int weightage) {
+        if (weightage <= 0) {
             return 0;
         }
+        String projectText = String.join(" ",
+                String.join(" ", projects == null ? List.of() : projects),
+                resumeText == null ? "" : resumeText);
         if (keywords == null || keywords.isEmpty()) {
-            return Math.min(weightage, projects.size() * (weightage / 3.0));
+            return projectText.isBlank() ? 0 : Math.min(weightage, weightage / 2.0);
         }
-        String projectText = String.join(" ", projects);
         long matches = keywords.stream()
                 .filter(keyword -> StringListConverter.containsNormalized(projectText, keyword))
                 .count();
         return weightedRatio(matches, keywords.size(), weightage);
     }
 
-    private double scoreEducation(String education, String requiredEducation, int weightage) {
+    private double scoreEducation(String resumeText, String education, String requiredEducation, int weightage) {
         if (weightage <= 0) {
             return 0;
         }
@@ -94,9 +100,13 @@ public class RuleBasedScoringService implements Scorable {
         if (StringListConverter.isPartialMatch(education, requiredEducation)) {
             return weightage;
         }
+        if (StringListConverter.containsNormalized(resumeText, requiredEducation)) {
+            return weightage;
+        }
         List<String> requiredTokens = List.of(requiredEducation.split("\\s+"));
         long matches = requiredTokens.stream()
-                .filter(token -> StringListConverter.containsNormalized(education, token))
+                .filter(token -> StringListConverter.containsNormalized(education, token)
+                        || StringListConverter.containsNormalized(resumeText, token))
                 .count();
         return weightedRatio(matches, requiredTokens.size(), weightage);
     }
@@ -120,6 +130,23 @@ public class RuleBasedScoringService implements Scorable {
                 .toList();
     }
 
+    private List<String> matchedSkills(String resumeText, List<String> resumeSkills, List<String> requiredSkills) {
+        if (requiredSkills == null || requiredSkills.isEmpty()) {
+            return List.of();
+        }
+        return requiredSkills.stream()
+                .filter(requiredSkill -> isSkillPresent(resumeText, resumeSkills, requiredSkill))
+                .map(StringListConverter::normalize)
+                .distinct()
+                .toList();
+    }
+
+    private boolean isSkillPresent(String resumeText, List<String> resumeSkills, String requiredSkill) {
+        boolean structuredMatch = resumeSkills != null
+                && resumeSkills.stream().anyMatch(skill -> StringListConverter.isPartialMatch(skill, requiredSkill));
+        return structuredMatch || StringListConverter.containsNormalized(resumeText, requiredSkill);
+    }
+
     private List<String> keywordUniverse(JobRole role) {
         List<String> keywords = new ArrayList<>();
         if (role.getKeywords() != null) {
@@ -137,6 +164,7 @@ public class RuleBasedScoringService implements Scorable {
 
     private String combinedResumeText(Resume resume) {
         return String.join(" ",
+                resume.getExtractedText() == null ? "" : resume.getExtractedText(),
                 resume.getSummary() == null ? "" : resume.getSummary(),
                 resume.getEducation() == null ? "" : resume.getEducation(),
                 String.join(" ", resume.getSkills() == null ? List.of() : resume.getSkills()),
@@ -145,10 +173,43 @@ public class RuleBasedScoringService implements Scorable {
     }
 
     private boolean hasRequiredSections(Resume resume) {
-        return resume.getSummary() != null && !resume.getSummary().isBlank()
-                && resume.getEducation() != null && !resume.getEducation().isBlank()
-                && resume.getSkills() != null && !resume.getSkills().isEmpty()
-                && resume.getProjects() != null && !resume.getProjects().isEmpty();
+        boolean hasExtractedText = resume.getExtractedText() != null && !resume.getExtractedText().isBlank();
+        return (hasExtractedText || resume.getSummary() != null && !resume.getSummary().isBlank())
+                && (hasExtractedText || resume.getEducation() != null && !resume.getEducation().isBlank())
+                && (hasExtractedText || resume.getSkills() != null && !resume.getSkills().isEmpty())
+                && (hasExtractedText || resume.getProjects() != null && !resume.getProjects().isEmpty());
+    }
+
+    private boolean isComplete(Resume resume) {
+        return hasText(resume.getCandidateName())
+                && hasText(resume.getEmail())
+                && (hasText(resume.getExtractedText()) || resume.getSkills() != null && !resume.getSkills().isEmpty())
+                && (hasText(resume.getSummary()) || hasText(resume.getExtractedText()))
+                && (hasText(resume.getEducation()) || hasText(resume.getExtractedText()));
+    }
+
+    private List<String> atsIssues(Resume resume, String resumeText, JobRole role) {
+        List<String> issues = new ArrayList<>();
+        if (!hasText(resume.getCandidateName())) {
+            issues.add("Candidate name was missing; upload parser may need a clearer name line.");
+        }
+        if (!hasText(resume.getEmail())) {
+            issues.add("Email is missing.");
+        }
+        if (!hasText(resume.getSummary()) && !hasText(resume.getExtractedText())) {
+            issues.add("Summary or searchable resume text is missing.");
+        }
+        if (!hasText(resume.getEducation()) && !StringListConverter.containsNormalized(resumeText, role.getRequiredEducation())) {
+            issues.add("Education section is missing or does not match the role.");
+        }
+        if (matchedSkills(resumeText, resume.getSkills(), role.getRequiredSkills()).isEmpty()) {
+            issues.add("No required skills were found in the resume text.");
+        }
+        return issues;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private String buildRemarks(double score, String status, List<String> missingKeywords) {
@@ -156,7 +217,10 @@ public class RuleBasedScoringService implements Scorable {
             return "Strong ATS alignment. Recommended for AI interview.";
         }
         if ("CONSIDER".equals(status)) {
-            return "Moderate ATS alignment. Review missing signals: " + String.join(", ", missingKeywords.stream().limit(4).toList());
+            String missing = String.join(", ", missingKeywords.stream().limit(4).map(item -> item.toLowerCase(Locale.ROOT)).toList());
+            return missing.isBlank()
+                    ? "Moderate ATS alignment. Review profile quality before interview."
+                    : "Moderate ATS alignment. Review missing signals: " + missing;
         }
         return "Insufficient ATS alignment for this role.";
     }

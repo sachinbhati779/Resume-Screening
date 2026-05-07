@@ -57,7 +57,9 @@ public class ResumeController {
     }
 
     @GetMapping("/{id}/file")
-    public ResponseEntity<byte[]> downloadFile(@PathVariable Long id) {
+    public ResponseEntity<byte[]> downloadFile(
+            @PathVariable Long id,
+            @RequestParam(value = "download", defaultValue = "false") boolean download) {
         ResumeFileDTO file = resumeService.findFileById(id);
         String fileName = file.fileName() == null || file.fileName().isBlank()
                 ? "resume-" + id
@@ -65,8 +67,9 @@ public class ResumeController {
         String fileType = file.fileType() == null || file.fileType().isBlank()
                 ? MediaType.APPLICATION_OCTET_STREAM_VALUE
                 : file.fileType();
+        String disposition = download ? "attachment" : "inline";
         ResponseEntity.BodyBuilder response = ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + fileName.replace("\"", "") + "\"")
                 .contentType(MediaType.parseMediaType(fileType));
         if (file.fileSize() != null) {
             response.contentLength(file.fileSize());

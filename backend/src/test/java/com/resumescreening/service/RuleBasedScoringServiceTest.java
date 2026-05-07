@@ -26,13 +26,36 @@ class RuleBasedScoringServiceTest {
     }
 
     @Test
-    void rejectsIncompleteResumeBeforeScoring() {
+    void searchesExtractedResumeTextForRequiredSkillsWhenSkillSectionIsMissing() {
         Resume resume = resume();
+        resume.setSkills(List.of());
+        resume.setEducation("");
+        resume.setProjects(List.of());
+        resume.setExtractedText("""
+                Aarav Menon
+                aarav@example.com
+                B.Tech Computer Science
+                5 years experience building Java REST services, SQL indexes, and React dashboards.
+                Project: REST hiring dashboard and SQL ranking pipeline.
+                """);
+
+        double score = scoringService.calculateScore(resume, role());
+
+        assertThat(score).isGreaterThanOrEqualTo(80);
+    }
+
+    @Test
+    void rejectsResumeWithNoSearchableContentBeforeScoring() {
+        Resume resume = resume();
+        resume.setSkills(List.of());
+        resume.setProjects(List.of());
         resume.setSummary("");
+        resume.setEducation("");
+        resume.setExtractedText("");
 
         assertThatThrownBy(() -> scoringService.calculateScore(resume, role()))
                 .isInstanceOf(IncompleteResumeException.class)
-                .hasMessageContaining("Summary");
+                .hasMessageContaining("searchable content");
     }
 
     private Resume resume() {

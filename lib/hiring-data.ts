@@ -3,6 +3,7 @@ import {
   Bot,
   BriefcaseBusiness,
   FileCheck2,
+  FileText,
   ListChecks,
   Trophy,
   UsersRound,
@@ -23,6 +24,11 @@ export const navItems = [
     label: "Upload Resume",
     href: "/resumes/upload",
     icon: FileCheck2,
+  },
+  {
+    label: "Uploaded Resumes",
+    href: "/resumes",
+    icon: FileText,
   },
   {
     label: "Screening Results",

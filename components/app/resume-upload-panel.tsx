@@ -48,6 +48,7 @@ export function ResumeUploadPanel({
   const shortlistedCount = screeningReports.filter(
     (report) => report.status === "SHORTLISTED",
   ).length;
+  const invalidSelectedFiles = files.filter((file) => !isAllowedResumeFile(file));
 
   async function uploadFiles(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -173,13 +174,25 @@ export function ResumeUploadPanel({
                 {files.map((file) => (
                   <div
                     key={`${file.name}-${file.size}`}
-                    className="flex items-center gap-3 text-sm text-[#A3A3A3]"
+                    className="flex items-center justify-between gap-3 text-sm text-[#A3A3A3]"
                   >
-                    <FileText className="size-4 text-[#E85D04]" />
-                    <span className="min-w-0 truncate">{file.name}</span>
+                    <span className="flex min-w-0 items-center gap-3">
+                      <FileText className="size-4 shrink-0 text-[#E85D04]" />
+                      <span className="min-w-0 truncate">{file.name}</span>
+                    </span>
+                    <span className="shrink-0 text-xs">
+                      {isAllowedResumeFile(file) ? "Allowed" : "Will warn"}
+                    </span>
                   </div>
                 ))}
               </div>
+              {invalidSelectedFiles.length > 0 ? (
+                <p className="mt-3 text-xs leading-5 text-[#A3A3A3]">
+                  Invalid files will be skipped by the backend and returned as
+                  warnings; valid PDF, Word, and text resumes will still be
+                  saved.
+                </p>
+              ) : null}
             </div>
           ) : null}
 
@@ -207,12 +220,17 @@ export function ResumeUploadPanel({
               returns a score of 80 or higher.
             </p>
           </div>
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/shortlist">
-              Shortlist
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/resumes">Uploaded</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/shortlist">
+                Shortlist
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {screeningReports.length > 0 ? (
@@ -254,8 +272,19 @@ export function ResumeUploadPanel({
                     {resume.candidateName}
                   </p>
                   <p className="mt-1 text-xs text-[#A3A3A3]">{resume.email}</p>
+                  {resume.fileName ? (
+                    <p className="mt-1 text-xs text-[#A3A3A3]">
+                      Saved file: {resume.fileName} ({formatBytes(resume.fileSize)})
+                    </p>
+                  ) : null}
                 </div>
               ))}
+              <Button asChild variant="outline" size="sm">
+                <Link href="/resumes">
+                  View uploaded resumes
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
             </div>
           ) : null}
 
@@ -279,4 +308,23 @@ export function ResumeUploadPanel({
       </GlassPanel>
     </div>
   );
+}
+
+function formatBytes(value?: number | null) {
+  if (!value || value <= 0) {
+    return "0 KB";
+  }
+  const units = ["B", "KB", "MB"];
+  let size = value;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+  return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function isAllowedResumeFile(file: File) {
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return ["pdf", "doc", "docx", "txt", "text"].includes(extension);
 }

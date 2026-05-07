@@ -53,6 +53,15 @@ export function JobRoleBuilder() {
     const roleName = String(formData.get("roleName") || "").trim();
     const requiredEducation = String(formData.get("requiredEducation") || "").trim();
     const summary = String(formData.get("summary") || "");
+    const pendingSkill = skill.trim();
+    const nextSkills = [
+      ...skills,
+      ...(pendingSkill ? [pendingSkill] : []),
+    ].filter((item, index, list) =>
+      list.findIndex(
+        (candidate) => candidate.toLowerCase() === item.toLowerCase(),
+      ) === index,
+    );
     const minExperience = parseExperience(
       String(formData.get("experience") || ""),
     );
@@ -68,7 +77,7 @@ export function JobRoleBuilder() {
       .filter((item) => item.length > 3)
       .slice(0, 12);
 
-    if (!roleName || !requiredEducation || skills.length === 0) {
+    if (!roleName || !requiredEducation || nextSkills.length === 0) {
       setStatus("Role name, education, and at least one skill are required.");
       setIsSaving(false);
       return;
@@ -77,7 +86,7 @@ export function JobRoleBuilder() {
     try {
       const role = await createJobRole({
         roleName,
-        requiredSkills: skills,
+        requiredSkills: nextSkills,
         minExperience,
         requiredEducation,
         keywords,
@@ -90,6 +99,7 @@ export function JobRoleBuilder() {
       setStatus(`Saved role: ${role.roleName}`);
       form.reset();
       setSkills([]);
+      setSkill("");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Unable to save role");
     } finally {

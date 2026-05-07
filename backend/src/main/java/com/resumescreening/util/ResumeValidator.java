@@ -12,18 +12,17 @@ public final class ResumeValidator {
         if (resume == null) {
             throw new IncompleteResumeException("Resume is required");
         }
-        requireText(resume.getCandidateName(), "Candidate name is required");
-        requireText(resume.getEmail(), "Email is required");
-        if (resume.getSkills() == null || resume.getSkills().isEmpty()) {
-            throw new IncompleteResumeException("At least one skill is required");
+        boolean hasStructuredContent = hasText(resume.getSummary())
+                || hasText(resume.getEducation())
+                || resume.getSkills() != null && !resume.getSkills().isEmpty()
+                || resume.getProjects() != null && !resume.getProjects().isEmpty();
+        boolean hasExtractedText = hasText(resume.getExtractedText());
+        if (!hasStructuredContent && !hasExtractedText) {
+            throw new IncompleteResumeException("Resume has no searchable content for screening");
         }
-        requireText(resume.getSummary(), "Summary is required");
-        requireText(resume.getEducation(), "Education is required");
     }
 
-    private static void requireText(String value, String message) {
-        if (value == null || value.isBlank()) {
-            throw new IncompleteResumeException(message);
-        }
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

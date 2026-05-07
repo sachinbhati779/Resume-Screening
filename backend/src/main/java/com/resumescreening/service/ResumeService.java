@@ -161,9 +161,11 @@ public class ResumeService {
         resume.setFileType(resolveFileType(file));
         resume.setFileSize(file.getSize());
         resume.setFileData(file.getBytes());
-        if (resume.getCandidateName() == null || resume.getCandidateName().isBlank()) {
-            resume.setCandidateName(fallbackCandidateName(file.getOriginalFilename()));
-        }
+        resume.setExtractedText(content);
+        resume.setCandidateName(resolveCandidateName(
+                resume.getCandidateName(),
+                resume.getEmail(),
+                file.getOriginalFilename()));
         return resume;
     }
 
@@ -175,7 +177,8 @@ public class ResumeService {
         resume.setEmail(email);
         resume.setPhone(extractPhone(safeContent));
         resume.setSkills(splitValues(extractSectionValue(safeContent, "skills")));
-        resume.setExperienceYears(parseExperience(extractSectionValue(safeContent, "experience")));
+        String experienceSection = extractSectionValue(safeContent, "experience");
+        resume.setExperienceYears(parseExperience(experienceSection.isBlank() ? safeContent : experienceSection));
         resume.setEducation(extractSectionValue(safeContent, "education"));
         resume.setProjects(splitValues(extractSectionValue(safeContent, "projects")));
         String summary = extractSectionValue(safeContent, "summary");
@@ -394,5 +397,19 @@ public class ResumeService {
         }
         String name = filename.replaceFirst("\\.[^.]+$", "");
         return name.isBlank() ? "Unknown Candidate" : name.trim();
+    }
+
+    private String resolveCandidateName(String candidateName, String email, String filename) {
+        if (candidateName != null && !candidateName.isBlank()) {
+            return candidateName;
+        }
+        if (email != null && !email.isBlank()) {
+            String localPart = email.split("@")[0];
+            String normalized = localPart.replaceAll("[._-]+", " ").trim();
+            if (!normalized.isBlank()) {
+                return titleCase(normalized);
+            }
+        }
+        return fallbackCandidateName(filename);
     }
 }

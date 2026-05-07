@@ -52,10 +52,12 @@ Content-Type: multipart/form-data
 
 Form fields:
 
-- `files`: one or more text-like files
+- `files`: one or more `.pdf`, `.doc`, `.docx`, `.txt`, or `.text` resume files
 - `appliedRole`: optional fallback role
 
-The simple parser accepts lines like:
+Valid files are saved in the `resumes` table with `file_name`, `file_type`, `file_size`, and `file_data`. In a batch upload, valid files are accepted even if another file is rejected; rejected files are returned in the `warnings` array.
+
+Text resumes parse best with lines like:
 
 ```text
 name: Aarav Menon
@@ -67,6 +69,16 @@ education: B.Tech Computer Science
 projects: AI dashboard, SQL ranking engine
 summary: Built Java REST APIs and React hiring dashboards.
 role: Frontend AI Engineer
+```
+
+## View Or Download Uploaded Resume File
+
+```http
+GET /api/resumes/1/file
+```
+
+```http
+GET /api/resumes/1/file?download=true
 ```
 
 ## Screen Resumes

@@ -42,7 +42,6 @@ export function LiveInterviewRoom({ token }: LiveInterviewRoomProps) {
 
   React.useEffect(() => {
     let active = true;
-    setLoading(true);
     getLiveInterviewAccess(token)
       .then((data) => {
         if (!active) return;

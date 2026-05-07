@@ -60,6 +60,8 @@ OPENAI_API_KEY=
 - `POST /api/resumes/upload`
 - `GET /api/resumes`
 - `GET /api/resumes/{id}`
+- `GET /api/resumes/{id}/file`
+- `GET /api/resumes/{id}/file?download=true`
 - `POST /api/screen`
 - `GET /api/screening-reports`
 - `GET /api/screening-reports/{id}`

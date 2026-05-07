@@ -38,6 +38,7 @@ public class ResumeRepository {
         long fileSize = rs.getLong("file_size");
         resume.setFileSize(rs.wasNull() ? null : fileSize);
         resume.setFileData(rs.getBytes("file_data"));
+        resume.setExtractedText(rs.getString("extracted_text"));
         resume.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
         resume.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
         return resume;
@@ -52,9 +53,9 @@ public class ResumeRepository {
                 INSERT INTO resumes (
                     candidate_name, email, phone, skills, experience_years,
                     education, projects, summary, applied_role,
-                    file_name, file_type, file_size, file_data
+                    file_name, file_type, file_size, file_data, extracted_text
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
         try {
@@ -77,6 +78,7 @@ public class ResumeRepository {
                     ps.setLong(12, resume.getFileSize());
                 }
                 ps.setBytes(13, resume.getFileData());
+                ps.setString(14, resume.getExtractedText());
                 return ps;
             }, keyHolder);
             Number key = keyHolder.getKey();

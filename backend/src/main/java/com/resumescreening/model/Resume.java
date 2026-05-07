@@ -20,6 +20,7 @@ public class Resume {
     private String fileType;
     private Long fileSize;
     private byte[] fileData;
+    private String extractedText;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -133,6 +134,14 @@ public class Resume {
 
     public void setFileData(byte[] fileData) {
         this.fileData = fileData == null ? null : fileData.clone();
+    }
+
+    public String getExtractedText() {
+        return extractedText;
+    }
+
+    public void setExtractedText(String extractedText) {
+        this.extractedText = extractedText;
     }
 
     public LocalDateTime getCreatedAt() {
