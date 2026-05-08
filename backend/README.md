@@ -32,8 +32,12 @@ cd backend
 Start the frontend against the backend:
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080 npm run dev
+npm run dev
 ```
+
+The frontend proxies browser requests through its own `/api/...` routes and
+forwards them to `http://localhost:8080` by default. For deployed frontend
+builds, set `API_BASE_URL=https://<your-render-backend>.onrender.com`.
 
 Docker Desktop or another Docker daemon must be running before `docker compose up -d` can start MySQL.
 
