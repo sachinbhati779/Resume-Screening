@@ -193,11 +193,25 @@ const emptySummary: DashboardSummary = {
 };
 
 export function apiBaseUrl() {
-  return (
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
+  if (typeof window !== "undefined") {
+    return normalizeApiBaseUrl(process.env.NEXT_PUBLIC_BROWSER_API_BASE_URL);
+  }
+
+  return backendApiBaseUrl();
+}
+
+export function backendApiBaseUrl() {
+  const configuredBaseUrl = normalizeApiBaseUrl(
     process.env.API_BASE_URL ||
-    DEFAULT_API_BASE_URL
+      process.env.BACKEND_API_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_BASE_URL,
   );
+
+  if (configuredBaseUrl) {
+    return configuredBaseUrl;
+  }
+
+  return process.env.VERCEL ? "" : DEFAULT_API_BASE_URL;
 }
 
 export async function fetchDashboardSummary(): Promise<
@@ -358,7 +372,14 @@ async function fetchBackend<T>(
 }
 
 async function sendBackend<T>(path: string, init: RequestInit) {
-  const response = await fetch(`${apiBaseUrl()}${path}`, init);
+  let response: Response;
+
+  try {
+    response = await fetch(`${apiBaseUrl()}${path}`, init);
+  } catch (error) {
+    throw new Error(connectionErrorMessage(path, error));
+  }
+
   const body = (await parseJson<T>(response)) as ApiResponse<T> | null;
 
   if (!response.ok || body?.success === false) {
@@ -366,6 +387,17 @@ async function sendBackend<T>(path: string, init: RequestInit) {
   }
 
   return body;
+}
+
+function normalizeApiBaseUrl(value?: string) {
+  return value?.trim().replace(/\/+$/, "") || "";
+}
+
+function connectionErrorMessage(path: string, error: unknown) {
+  const reason = error instanceof Error ? error.message : "Request failed";
+  const target = apiBaseUrl() ? `${apiBaseUrl()}${path}` : path;
+
+  return `Unable to reach backend API at ${target}. ${reason}`;
 }
 
 async function parseJson<T>(response: Response) {

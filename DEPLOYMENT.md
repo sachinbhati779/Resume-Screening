@@ -37,7 +37,16 @@ Install Command: npm install
 Set this environment variable:
 
 ```text
-NEXT_PUBLIC_API_BASE_URL=https://<your-render-backend>.onrender.com
+API_BASE_URL=https://<your-render-backend>.onrender.com
 ```
 
-After Vercel gives a public URL, update `CORS_ALLOWED_ORIGINS` in Render to include it, then redeploy/restart the backend.
+The frontend calls its own `/api/...` routes first, and Vercel forwards those
+requests to Spring Boot. This keeps mobile browsers from trying to call
+`localhost:8080` and avoids browser CORS failures for normal app usage.
+
+`NEXT_PUBLIC_API_BASE_URL` is still supported for older deployments, but
+`API_BASE_URL` is preferred because it stays server-side.
+
+After Vercel gives a public URL, update `CORS_ALLOWED_ORIGINS` in Render to
+include it if you also call the backend directly from a browser, then
+redeploy/restart the backend.
