@@ -26,6 +26,7 @@ import com.resumescreening.exception.CandidateNotFoundException;
 import com.resumescreening.exception.IncompleteResumeException;
 import com.resumescreening.model.Resume;
 import com.resumescreening.repository.ResumeRepository;
+import com.resumescreening.util.ResumeValidator;
 
 @Service
 public class ResumeService {
@@ -175,6 +176,7 @@ public class ResumeService {
                 resume.getCandidateName(),
                 resume.getEmail(),
                 file.getOriginalFilename()));
+        ResumeValidator.validateLikelyResume(resume);
         return resume;
     }
 

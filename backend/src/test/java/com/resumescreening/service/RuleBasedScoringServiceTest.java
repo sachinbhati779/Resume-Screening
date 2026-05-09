@@ -34,9 +34,16 @@ class RuleBasedScoringServiceTest {
         resume.setExtractedText("""
                 Aarav Menon
                 aarav@example.com
+                Phone: +91 98765 43210
+                Summary: Frontend AI engineer with strong experience building hiring workflows, recruiter dashboards, and structured interview tools.
+                Skills
+                Java, SQL, React, REST
+                Education
                 B.Tech Computer Science
-                5 years experience building Java REST services, SQL indexes, and React dashboards.
-                Project: REST hiring dashboard and SQL ranking pipeline.
+                Experience
+                5 years experience building Java REST services, SQL indexes, and React dashboards for production hiring systems.
+                Projects
+                REST hiring dashboard, SQL ranking pipeline, candidate screening API, and interview workflow automation.
                 """);
 
         double score = scoringService.calculateScore(resume, role());
@@ -55,7 +62,7 @@ class RuleBasedScoringServiceTest {
 
         assertThatThrownBy(() -> scoringService.calculateScore(resume, role()))
                 .isInstanceOf(IncompleteResumeException.class)
-                .hasMessageContaining("searchable content");
+                .hasMessageContaining("valid resume");
     }
 
     private Resume resume() {
@@ -68,6 +75,26 @@ class RuleBasedScoringServiceTest {
         resume.setProjects(List.of("REST hiring dashboard", "SQL ranking pipeline"));
         resume.setSummary("Built Java REST services with SQL indexes and React frontend integration.");
         resume.setAppliedRole("Frontend AI Engineer");
+        resume.setExtractedText("""
+                Aarav Menon
+                aarav@example.com
+                Phone: +91 98765 43210
+
+                Summary
+                Built Java REST services with SQL indexes and React frontend integration for recruiter workflows, candidate ranking, and interview automation.
+
+                Skills
+                Java, SQL, React, REST
+
+                Education
+                B.Tech Computer Science
+
+                Experience
+                5 years building production APIs, dashboard workflows, SQL-backed ranking systems, and structured hiring tools.
+
+                Projects
+                REST hiring dashboard, SQL ranking pipeline, resume screening workflow, and AI interview console.
+                """);
         return resume;
     }
 

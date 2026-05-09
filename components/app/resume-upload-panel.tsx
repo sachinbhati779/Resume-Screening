@@ -21,6 +21,19 @@ type ResumeUploadPanelProps = {
   backendMessage?: string;
 };
 
+const ALLOWED_RESUME_EXTENSIONS = ["pdf", "doc", "docx", "txt", "text"];
+const RESUME_FILE_ACCEPT = [
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".txt",
+  ".text",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+].join(",");
+
 export function ResumeUploadPanel({
   roles,
   backendMessage,
@@ -72,6 +85,13 @@ export function ResumeUploadPanel({
       return;
     }
 
+    if (invalidSelectedFiles.length > 0) {
+      setStatus(
+        `Remove unsupported files before uploading: ${invalidSelectedFiles.map((file) => file.name).join(", ")}. Only PDF, DOC, DOCX, and TXT resume files are allowed.`,
+      );
+      return;
+    }
+
     setIsUploading(true);
     try {
       const upload = await uploadResumeFiles(files, selectedRole.roleName);
@@ -118,14 +138,14 @@ export function ResumeUploadPanel({
               Upload resumes
             </span>
             <span className="mt-2 block max-w-sm text-sm leading-6 text-[#A3A3A3]">
-              Upload PDF, Word, or text resumes with name, email, skills,
+              Upload only PDF, Word, or text resumes with name, email, skills,
               education, summary, projects, experience, and role fields.
             </span>
             <input
               id="resume-upload"
               type="file"
               multiple
-              accept=".pdf,.doc,.docx,.txt,.text"
+              accept={RESUME_FILE_ACCEPT}
               className="sr-only"
               onChange={(event) => {
                 setFiles(Array.from(event.target.files ?? []));
@@ -181,16 +201,16 @@ export function ResumeUploadPanel({
                       <span className="min-w-0 truncate">{file.name}</span>
                     </span>
                     <span className="shrink-0 text-xs">
-                      {isAllowedResumeFile(file) ? "Allowed" : "Will warn"}
+                      {isAllowedResumeFile(file) ? "Allowed" : "Unsupported"}
                     </span>
                   </div>
                 ))}
               </div>
               {invalidSelectedFiles.length > 0 ? (
                 <p className="mt-3 text-xs leading-5 text-[#A3A3A3]">
-                  Invalid files will be skipped by the backend and returned as
-                  warnings; valid PDF, Word, and text resumes will still be
-                  saved.
+                  Remove unsupported files before uploading. The system accepts
+                  only PDF, Word, and text resume files, then verifies the file
+                  content on the backend.
                 </p>
               ) : null}
             </div>
@@ -202,7 +222,12 @@ export function ResumeUploadPanel({
             ) : (
               <span />
             )}
-            <Button type="submit" disabled={isUploading || roles.length === 0}>
+            <Button
+              type="submit"
+              disabled={
+                isUploading || roles.length === 0 || invalidSelectedFiles.length > 0
+              }
+            >
               {isUploading ? "Processing" : "Upload and process"}
             </Button>
           </div>
@@ -326,5 +351,5 @@ function formatBytes(value?: number | null) {
 
 function isAllowedResumeFile(file: File) {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-  return ["pdf", "doc", "docx", "txt", "text"].includes(extension);
+  return ALLOWED_RESUME_EXTENSIONS.includes(extension);
 }

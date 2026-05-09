@@ -143,6 +143,52 @@ class ResumeServiceTest {
         assertThat(response.resumes().get(0).summary()).contains("Fresher focused");
     }
 
+    @Test
+    void rejectsReadableFileThatDoesNotLookLikeResume() {
+        ResumeUploadResponseDTO response = uploadTextResume(
+                "quarterly-report.txt",
+                """
+                        Quarterly revenue report
+                        The marketing budget increased this month and the
+                        operations team reviewed vendor contracts for office
+                        supplies, travel reimbursements, event planning, and
+                        monthly subscription renewals. Revenue improved after
+                        a campaign refresh, but the document only summarizes
+                        sales channels, procurement notes, invoice timing,
+                        customer segments, and administrative follow-up items.
+                        It intentionally contains enough text to look like a
+                        readable PDF document while still not describing a
+                        candidate profile, skills, education, projects, or
+                        work history.
+                        """
+        );
+
+        assertThat(response.uploadedCount()).isZero();
+        assertThat(response.resumes()).isEmpty();
+        assertThat(response.warnings()).hasSize(1);
+        assertThat(response.warnings().get(0)).contains("does not look like a valid resume");
+    }
+
+    @Test
+    void rejectsUnsupportedFileExtension() {
+        MockMultipartFile file = new MockMultipartFile(
+                "files",
+                "profile-photo.png",
+                "image/png",
+                "not a resume".getBytes(StandardCharsets.UTF_8)
+        );
+
+        ResumeUploadResponseDTO response = resumeService.upload(
+                new MockMultipartFile[]{file},
+                "Software Developer"
+        );
+
+        assertThat(response.uploadedCount()).isZero();
+        assertThat(response.resumes()).isEmpty();
+        assertThat(response.warnings()).hasSize(1);
+        assertThat(response.warnings().get(0)).contains("Only PDF, DOC, DOCX, or TXT files are allowed");
+    }
+
     private ResumeUploadResponseDTO uploadTextResume(String filename, String content) {
         MockMultipartFile file = new MockMultipartFile(
                 "files",
